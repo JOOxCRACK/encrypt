@@ -1,59 +1,44 @@
+// server.js
 const express = require("express");
-const bodyParser = require("body-parser");
 const adyenEncrypt = require("node-adyen-encrypt");
+const bodyParser = require("body-parser");
 
 const app = express();
-
-// فقط نفعل parser المناسب للـ x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: true }));
-// لا تستخدم bodyParser.json()
-
-const KEY_VERSION = parseInt(process.env.KEY_VERSION || "10001");
-const PUBLIC_KEY = process.env.PUBLIC_KEY;
-
-if (!PUBLIC_KEY) {
-  console.error("❌ PUBLIC_KEY is missing. Please set it in your environment variables.");
-  process.exit(1);
-}
-
-const encryptor = adyenEncrypt.createEncryption(PUBLIC_KEY, {
-  keyVersion: KEY_VERSION,
-});
+app.use(bodyParser.json());
 
 app.post("/adyen", (req, res) => {
-  console.log("📥 Incoming request body:", req.body);
+  const { card, month, year, cvv, adyen_key, adyen_version } = req.body;
 
-  const { cc, mes, ano, cvv } = req.body;
-
-  if (!cc || !mes || !ano || !cvv) {
-    return res.status(400).json({ error: "Missing required fields: cc, mes, ano, cvv" });
+  if (!card || !month || !year || !cvv || !adyen_key || !adyen_version) {
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const generationtime = new Date().toISOString();
+  const keyVersion = parseInt(adyen_key.split("|")[0]);
+  const publicKey = adyen_key.split("|")[1];
 
-  const card = {
-    number: cc,
-    expiryMonth: mes,
-    expiryYear: ano,
+  const encryptor = adyenEncrypt.createEncryption(publicKey, { keyVersion });
+
+  const generationtime = new Date().toISOString();
+  const cardData = {
+    number: card,
+    expiryMonth: month,
+    expiryYear: year,
     cvc: cvv,
-    generationtime,
+    generationtime
   };
 
   try {
-    encryptor.validate(card);
-    const encrypted = encryptor.encrypt(card);
+    encryptor.validate(cardData);
+    const encrypted = encryptor.encrypt(cardData);
     return res.json({ encrypted });
   } catch (e) {
-    console.error("❌ Encryption failed:", e.message);
-    return res.status(400).json({ error: e.message || "Encryption failed" });
+    return res.status(400).json({ error: "Encryption failed", message: e.message });
   }
 });
 
 app.get("/", (req, res) => {
-  res.send("✅ Adyen Encryption API is running.");
+  res.send("Adyen Encrypt API Ready ✅");
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Server ready on port ${PORT}`));
