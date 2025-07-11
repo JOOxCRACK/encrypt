@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Adyen Card Encryption</title>
+  <link rel="stylesheet" href="https://checkoutshopper-live.adyen.com/checkoutshopper/sdk/5.53.0/adyen.css" />
+  <script src="https://checkoutshopper-live.adyen.com/checkoutshopper/sdk/5.53.0/adyen.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+    #card-container { margin: 20px 0; }
+    #result { white-space: pre-wrap; background: #eee; padding: 10px; border-radius: 5px; }
+    button { padding: 10px 20px; background: #0070f3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #005bb5; }
+  </style>
+</head>
+<body>
+
+<h2>🔐 Adyen Card Encryption (LIVE)</h2>
+<div id="card-container"></div>
+<button id="payBtn">Encrypt</button>
+<h3>Result:</h3>
+<div id="result">Waiting...</div>
+
+<script>
+  (async function () {
+    const configuration = {
+      environment: 'live',
+      clientKey: 'live_N3GN6FCMMRBDPCN7O652JB6544TEPBXY', // ⬆️ مفتاحك الحقيقي
+      paymentMethodsResponse: {},
+    };
+
+    const checkout = await AdyenCheckout(configuration);
+    const card = checkout.create('card').mount('#card-container');
+
+    document.getElementById('payBtn').addEventListener('click', async () => {
+      const state = card.data;
+      if (state.isValid) {
+        document.getElementById('result').innerText = JSON.stringify(state.paymentMethod, null, 2);
+      } else {
+        document.getElementById('result').innerText = '❌ Card info not valid.';
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>
