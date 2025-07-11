@@ -1,6 +1,6 @@
-require("dotenv").config(); // ← لو هتشغل محليًا
 const express = require("express");
 const bodyParser = require("body-parser");
+require("dotenv").config();
 const adyenEncrypt = require("node-adyen-encrypt");
 
 const app = express();
@@ -11,11 +11,12 @@ const KEY_VERSION = parseInt(process.env.KEY_VERSION || "10001");
 const PUBLIC_KEY = process.env.PUBLIC_KEY;
 
 if (!PUBLIC_KEY) {
-  throw new Error("❌ PUBLIC_KEY is not defined in environment variables");
+  throw new Error("❌ PUBLIC_KEY not set");
 }
 
-const adyenCSE = adyenEncrypt(KEY_VERSION);
-const encryptor = adyenCSE.createEncryption(PUBLIC_KEY, {});
+const encryptor = adyenEncrypt.createEncryption(PUBLIC_KEY, {
+  keyVersion: KEY_VERSION,
+});
 
 app.post("/adyen", (req, res) => {
   const { cc, mes, ano, cvv } = req.body;
@@ -38,11 +39,5 @@ app.post("/adyen", (req, res) => {
   }
 });
 
-app.get("/", (req, res) => {
-  res.send("Adyen Encrypt API ✅");
-});
-
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
