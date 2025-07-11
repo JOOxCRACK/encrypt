@@ -1,4 +1,3 @@
-
 const express = require("express");
 const bodyParser = require("body-parser");
 const adyenEncrypt = require("node-adyen-encrypt");
@@ -16,13 +15,14 @@ app.post("/adyen", (req, res) => {
   try {
     const keyParts = adyen_key.split("|");
     if (keyParts.length !== 2) {
-      return res.status(400).json({ error: "Invalid adyen_key format. Use 10001|<publicKey>" });
+      return res.status(400).json({ error: "Invalid adyen_key format" });
     }
 
     const keyVersion = parseInt(keyParts[0]);
-    const publicKey = keyParts[1].trim(); // ✅ مهم جدًا
+    const publicKey = keyParts[1];
 
     const encryptor = adyenEncrypt.createEncryption(publicKey, { keyVersion });
+
     const generationtime = new Date().toISOString();
 
     const cardData = {
@@ -33,7 +33,10 @@ app.post("/adyen", (req, res) => {
       generationtime
     };
 
+    // ✅ تأكد من التحقق
     encryptor.validate(cardData);
+
+    // ✅ التشفير
     const encrypted = encryptor.encrypt(cardData);
 
     return res.json({ encrypted });
@@ -44,7 +47,7 @@ app.post("/adyen", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Adyen Encrypt API Ready ✅");
+  res.send("Adyen Encrypt API ✅");
 });
 
 const PORT = process.env.PORT || 3000;
