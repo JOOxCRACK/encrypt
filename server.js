@@ -1,17 +1,22 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-require("dotenv").config();
 const adyenEncrypt = require("node-adyen-encrypt");
 
 const app = express();
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
 
+// لضمان قراءة البيانات بشكل صحيح
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// قراءة المتغيرات من البيئة (Render أو محلي)
 const KEY_VERSION = parseInt(process.env.KEY_VERSION || "10001");
 const PUBLIC_KEY = process.env.PUBLIC_KEY;
 
 if (!PUBLIC_KEY) {
-  throw new Error("❌ PUBLIC_KEY not set");
+  console.error("❌ PUBLIC_KEY is missing. Please set it in your environment variables.");
+  process.exit(1);
 }
 
 const encryptor = adyenEncrypt.createEncryption(PUBLIC_KEY, {
@@ -19,7 +24,14 @@ const encryptor = adyenEncrypt.createEncryption(PUBLIC_KEY, {
 });
 
 app.post("/adyen", (req, res) => {
+  console.log("📥 Incoming request body:", req.body);
+
   const { cc, mes, ano, cvv } = req.body;
+
+  if (!cc || !mes || !ano || !cvv) {
+    return res.status(400).json({ error: "Missing required fields: cc, mes, ano, cvv" });
+  }
+
   const generationtime = new Date().toISOString();
 
   const card = {
@@ -33,11 +45,18 @@ app.post("/adyen", (req, res) => {
   try {
     encryptor.validate(card);
     const encrypted = encryptor.encrypt(card);
-    res.json({ encrypted });
+    return res.json({ encrypted });
   } catch (e) {
-    res.status(400).json({ error: e.message });
+    console.error("❌ Encryption failed:", e.message);
+    return res.status(400).json({ error: e.message });
   }
 });
 
+app.get("/", (req, res) => {
+  res.send("✅ Adyen Encryption API is running.");
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
