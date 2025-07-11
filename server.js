@@ -22,33 +22,11 @@ app.post("/adyen", (req, res) => {
 
     const generationtime = new Date().toISOString();
 
-    const cardData = {
-      number: card,
-      expiryMonth: month,
-      expiryYear: year,
-      cvc: cvv,
-      generationtime
-    };
-
-    encryptor.validate(cardData);
-
     const encrypted = {
-      number: encryptor.encrypt({
-        number: card,
-        generationtime
-      }),
-      expiryMonth: encryptor.encrypt({
-        expiryMonth: month,
-        generationtime
-      }),
-      expiryYear: encryptor.encrypt({
-        expiryYear: year,
-        generationtime
-      }),
-      cvc: encryptor.encrypt({
-        cvc: cvv,
-        generationtime
-      })
+      number: encryptor.encrypt({ number: card, generationtime }),
+      expiryMonth: encryptor.encrypt({ expiryMonth: month, generationtime }),
+      expiryYear: encryptor.encrypt({ expiryYear: year, generationtime }),
+      cvc: encryptor.encrypt({ cvc: cvv, generationtime }),
     };
 
     return res.json({ encrypted });
