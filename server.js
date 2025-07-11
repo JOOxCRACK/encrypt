@@ -7,33 +7,50 @@ app.use(bodyParser.json());
 
 app.post("/adyen", (req, res) => {
   const { card, month, year, cvv, adyen_key } = req.body;
+
   if (!card || !month || !year || !cvv || !adyen_key) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
-    const [ver, pub] = adyen_key.split("|");
-    if (!ver || !pub) return res.status(400).json({ error: "Invalid adyen_key format" });
+    const keyVersion = parseInt(adyen_key.split("|")[0]);
+    const publicKey = adyen_key.split("|")[1];
 
-    const encryptor = adyenEncrypt.createEncryption(pub, {
-      keyVersion: parseInt(ver)
+    const encryptor = adyenEncrypt.createEncryption(publicKey, {
+      keyVersion,
     });
 
-    const timestamp = new Date().toISOString();
+    const generationtime = new Date().toISOString();
 
     const encrypted = {
-      number: encryptor.encrypt({ number: card, generationtime: timestamp }),
-      expiryMonth: encryptor.encrypt({ expiryMonth: month, generationtime: timestamp }),
-      expiryYear: encryptor.encrypt({ expiryYear: year, generationtime: timestamp }),
-      cvc: encryptor.encrypt({ cvc: cvv, generationtime: timestamp })
+      number: encryptor.encrypt({
+        number: card,
+        generationtime
+      }),
+      expiryMonth: encryptor.encrypt({
+        expiryMonth: month,
+        generationtime
+      }),
+      expiryYear: encryptor.encrypt({
+        expiryYear: year,
+        generationtime
+      }),
+      cvc: encryptor.encrypt({
+        cvc: cvv,
+        generationtime
+      })
     };
 
     return res.json({ encrypted });
-  } catch (e) {
-    console.error("🔐 Encryption failed:", e.message || e);
+  } catch (err) {
+    console.error("❌ Encryption failed:", err.message || err);
     return res.status(400).json({ error: "Encryption failed" });
   }
 });
 
-app.get("/", (req, res) => res.send("Adyen CSE API ✅"));
-app.listen(process.env.PORT || 3000, () => console.log("🚀 Running"));
+app.get("/", (req, res) => {
+  res.send("✅ Adyen Encryption API Ready");
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
