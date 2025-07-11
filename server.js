@@ -13,8 +13,13 @@ app.post("/adyen", (req, res) => {
   }
 
   try {
-    const keyVersion = parseInt(adyen_key.split("|")[0]);
-    const publicKey = adyen_key.split("|")[1];
+    const keyParts = adyen_key.split("|");
+    if (keyParts.length !== 2) {
+      return res.status(400).json({ error: "Invalid adyen_key format. Use 10001|<publicKey>" });
+    }
+
+    const keyVersion = parseInt(keyParts[0]);
+    const publicKey = keyParts[1];
 
     const encryptor = adyenEncrypt.createEncryption(publicKey, { keyVersion });
 
