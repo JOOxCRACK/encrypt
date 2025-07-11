@@ -1,3 +1,4 @@
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const adyenEncrypt = require("node-adyen-encrypt");
@@ -19,10 +20,9 @@ app.post("/adyen", (req, res) => {
     }
 
     const keyVersion = parseInt(keyParts[0]);
-    const publicKey = keyParts[1];
+    const publicKey = keyParts[1].trim(); // ✅ مهم جدًا
 
     const encryptor = adyenEncrypt.createEncryption(publicKey, { keyVersion });
-
     const generationtime = new Date().toISOString();
 
     const cardData = {
