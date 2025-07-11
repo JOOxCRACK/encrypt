@@ -6,22 +6,19 @@ const app = express();
 app.use(bodyParser.json());
 
 app.post("/adyen", (req, res) => {
-  const { card, month, year, cvv, adyen_key, adyen_version } = req.body;
+  const { card, month, year, cvv, adyen_key } = req.body;
 
-  if (!card || !month || !year || !cvv || !adyen_key || !adyen_version) {
+  if (!card || !month || !year || !cvv || !adyen_key) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
-    const keyParts = adyen_key.split("|");
-    if (keyParts.length !== 2) {
-      return res.status(400).json({ error: "Invalid adyen_key format" });
-    }
+    const keyVersion = parseInt(adyen_key.split("|")[0]);
+    const publicKey = adyen_key.split("|")[1];
 
-    const keyVersion = parseInt(keyParts[0]);
-    const publicKey = keyParts[1];
-
-    const encryptor = adyenEncrypt.createEncryption(publicKey, { keyVersion });
+    const encryptor = adyenEncrypt.createEncryption(publicKey, {
+      keyVersion,
+    });
 
     const generationtime = new Date().toISOString();
 
@@ -33,11 +30,26 @@ app.post("/adyen", (req, res) => {
       generationtime
     };
 
-    // ✅ تأكد من التحقق
     encryptor.validate(cardData);
 
-    // ✅ التشفير
-    const encrypted = encryptor.encrypt(cardData);
+    const encrypted = {
+      number: encryptor.encrypt({
+        number: card,
+        generationtime
+      }),
+      expiryMonth: encryptor.encrypt({
+        expiryMonth: month,
+        generationtime
+      }),
+      expiryYear: encryptor.encrypt({
+        expiryYear: year,
+        generationtime
+      }),
+      cvc: encryptor.encrypt({
+        cvc: cvv,
+        generationtime
+      })
+    };
 
     return res.json({ encrypted });
   } catch (err) {
@@ -47,7 +59,7 @@ app.post("/adyen", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Adyen Encrypt API ✅");
+  res.send("✅ Adyen Encryption API Ready");
 });
 
 const PORT = process.env.PORT || 3000;
