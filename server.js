@@ -1,6 +1,7 @@
+
 const express = require("express");
 const bodyParser = require("body-parser");
-const adyenEncrypt = require("adyen-cse-js");
+const adyenEncrypt = require("./adyen-cse-js");
 
 const app = express();
 app.use(bodyParser.json());
@@ -21,6 +22,16 @@ app.post("/adyen", (req, res) => {
     });
 
     const generationtime = new Date().toISOString();
+
+    const cardData = {
+      number: card,
+      expiryMonth: month,
+      expiryYear: year,
+      cvc: cvv,
+      generationtime
+    };
+
+    encryptor.validate(cardData);
 
     const encrypted = {
       number: encryptor.encrypt({
