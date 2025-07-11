@@ -4,13 +4,10 @@ const adyenEncrypt = require("node-adyen-encrypt");
 
 const app = express();
 
-// لضمان قراءة البيانات بشكل صحيح
+// فقط نفعل parser المناسب للـ x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+// لا تستخدم bodyParser.json()
 
-// قراءة المتغيرات من البيئة (Render أو محلي)
 const KEY_VERSION = parseInt(process.env.KEY_VERSION || "10001");
 const PUBLIC_KEY = process.env.PUBLIC_KEY;
 
@@ -48,7 +45,7 @@ app.post("/adyen", (req, res) => {
     return res.json({ encrypted });
   } catch (e) {
     console.error("❌ Encryption failed:", e.message);
-    return res.status(400).json({ error: e.message });
+    return res.status(400).json({ error: e.message || "Encryption failed" });
   }
 });
 
